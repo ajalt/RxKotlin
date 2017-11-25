@@ -2,70 +2,73 @@ package io.reactivex.rxkotlin
 
 import io.reactivex.*
 import io.reactivex.disposables.Disposable
-import io.reactivex.exceptions.OnErrorNotImplementedException
-import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.functions.Consumer
+import io.reactivex.internal.functions.*
 
-private val onNextStub: (Any) -> Unit = {}
-private val onErrorStub: (Throwable) -> Unit = { RxJavaPlugins.onError(OnErrorNotImplementedException(it)) }
-private val onCompleteStub: () -> Unit = {}
+private typealias OnT<T> = ((T) -> Unit)?
+private typealias OnError = ((Throwable) -> Unit)?
+private typealias OnComplete = (() -> Unit)?
+/**
+ * Overloaded subscribe function that allows passing named parameters
+ */
+inline fun <reified T : Any> Observable<T>.subscribeBy(
+        noinline onError: OnError = null,
+        noinline onComplete: OnComplete = null,
+        noinline onNext: OnT<T> = null
+): Disposable = subscribe(onNext.orDefaultConsumer(), onError.orDefaultOnError(), onComplete.orDefaultOnComplete())
 
 /**
  * Overloaded subscribe function that allows passing named parameters
  */
-fun <T : Any> Observable<T>.subscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub,
-        onNext: (T) -> Unit = onNextStub
-        ): Disposable = subscribe(onNext, onError, onComplete)
+inline fun <reified T : Any> Flowable<T>.subscribeBy(
+        noinline onError: OnError = null,
+        noinline onComplete: OnComplete = null,
+        noinline onNext: OnT<T> = null
+): Disposable = subscribe(onNext.orDefaultConsumer(), onError.orDefaultOnError(), onComplete.orDefaultOnComplete())
 
 /**
  * Overloaded subscribe function that allows passing named parameters
  */
-fun <T : Any> Flowable<T>.subscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub,
-        onNext: (T) -> Unit = onNextStub
-        ): Disposable = subscribe(onNext, onError, onComplete)
+inline fun <reified T : Any> Single<T>.subscribeBy(
+        noinline onError: OnError = null,
+        noinline onSuccess: OnT<T> = null
+): Disposable = subscribe(onSuccess.orDefaultConsumer(), onError.orDefaultOnError())
 
 /**
  * Overloaded subscribe function that allows passing named parameters
  */
-fun <T : Any> Single<T>.subscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onSuccess: (T) -> Unit = onNextStub
-        ): Disposable = subscribe(onSuccess, onError)
-
-/**
- * Overloaded subscribe function that allows passing named parameters
- */
-fun <T : Any> Maybe<T>.subscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub,
-        onSuccess: (T) -> Unit = onNextStub
-        ): Disposable = subscribe(onSuccess, onError, onComplete)
+inline fun <reified T : Any> Maybe<T>.subscribeBy(
+        noinline onError: OnError = null,
+        noinline onComplete: OnComplete = null,
+        noinline onSuccess: OnT<T> = null
+): Disposable = subscribe(onSuccess.orDefaultConsumer(), onError.orDefaultOnError(), onComplete.orDefaultOnComplete())
 
 /**
  * Overloaded subscribe function that allows passing named parameters
  */
 fun Completable.subscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub
-): Disposable = subscribe(onComplete, onError)
+        onError: OnError = null,
+        onComplete: OnComplete = null
+): Disposable = if (onError == null) {
+    subscribe(onComplete.orDefaultOnComplete())
+} else {
+    subscribe(onComplete.orDefaultOnComplete(), Consumer(onError))
+}
 
 /**
  * Overloaded blockingSubscribe function that allows passing named parameters
  */
-fun <T : Any> Observable<T>.blockingSubscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub,
-        onNext: (T) -> Unit = onNextStub
-        ) = blockingSubscribe(onNext, onError, onComplete)
+inline fun <reified T : Any> Observable<T>.blockingSubscribeBy(
+        noinline onError: OnError = null,
+        noinline onComplete: OnComplete = null,
+        noinline onNext: OnT<T> = null
+): Disposable = subscribe(onNext.orDefaultConsumer(), onError.orDefaultOnError(), onComplete.orDefaultOnComplete())
 
 /**
  * Overloaded blockingSubscribe function that allows passing named parameters
  */
-fun <T : Any> Flowable<T>.blockingSubscribeBy(
-        onError: (Throwable) -> Unit = onErrorStub,
-        onComplete: () -> Unit = onCompleteStub,
-        onNext: (T) -> Unit = onNextStub
-        ) = blockingSubscribe(onNext, onError, onComplete)
+inline fun <reified T : Any> Flowable<T>.blockingSubscribeBy(
+        noinline onError: OnError = null,
+        noinline onComplete: OnComplete = null,
+        noinline onNext: OnT<T> = null
+): Disposable = subscribe(onNext.orDefaultConsumer(), onError.orDefaultOnError(), onComplete.orDefaultOnComplete())
